@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-basic-blue: oklch(0.7216 0.16 241.3);
+  --color-dark-blue: oklch(0.6308 0.17 250.15);
+  --color-study-gray: oklch(0.9762 0.007 233.64);
+}
+
+html {
+  scrollbar-gutter: stable;
+}

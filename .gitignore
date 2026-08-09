@@ -1,0 +1,64 @@
+# ====================================
+# Frontend (Vue + Vite)
+# ====================================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/coverage/
+frontend/*.local
+
+# Logs
+frontend/logs/
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Editor directories and files
+frontend/.eslintcache
+frontend/*.tsbuildinfo
+
+# Cypress
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+
+# Vitest
+frontend/__screenshots__/
+frontend/test-results/
+frontend/playwright-report/
+
+# VSCode settings (global)
+.vscode/*
+!.vscode/extensions.json
+
+# ====================================
+# Backend (Django)
+# ====================================
+backend/__pycache__/
+backend/**/*.pyc
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+
+backend/db.sqlite3
+backend/.venv/
+
+# env files
+**/.env
+**/.env.*
+!.env.example
+
+# ====================================
+# OS / Editor
+# ====================================
+.DS_Store
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+experiment/
+.codex
