@@ -6,7 +6,6 @@ from rest_framework.test import APITestCase
 
 from renda.models import Card, Deck
 
-
 User = get_user_model()
 
 
@@ -14,6 +13,7 @@ class CardApiTests(APITestCase):
     """
     カードAPIのテスト
     """
+
     def setUp(self):
         self.user = User.objects.create_user(
             email="u1@example.com",
@@ -53,9 +53,7 @@ class CardApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
 
     def test_認証済みユーザーが他人のカード一覧を取得できないこと(self):
         self._authenticate()

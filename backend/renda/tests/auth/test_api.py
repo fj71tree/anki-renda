@@ -1,15 +1,15 @@
-from allauth.account.models import EmailAddress
+import re
+from urllib.parse import unquote
+
 from allauth.account.forms import default_token_generator
+from allauth.account.models import EmailAddress
 from allauth.account.utils import user_pk_to_url_str
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
-import re
-from urllib.parse import unquote
 from rest_framework import status
 from rest_framework.test import APITestCase
-
 
 User = get_user_model()
 
@@ -18,6 +18,7 @@ class DjRestAuthTestMixin:
     """
     認証系テストに用いる共通関数
     """
+
     def create_verified_user(self, email="verified@example.com", password="Passw0rd!"):
         user = User.objects.create_user(email=email, password=password)
         EmailAddress.objects.create(
@@ -39,6 +40,7 @@ class RegistrationApiTests(APITestCase):
     """
     アカウント新規登録APIのテスト
     """
+
     def test_ユーザの登録後に確認メールが送信されること(self):
         response = self.client.post(
             reverse("rest_register"),
@@ -72,7 +74,10 @@ class RegistrationDisabledApiTests(APITestCase):
     """
     アカウント新規登録機能を停止にした場合のAPIテスト
     """
-    def test_環境変数でアカウントの新規作成を停止している場合に新規登録が行われないこと(self):
+
+    def test_環境変数でアカウントの新規作成を停止している場合に新規登録が行われないこと(
+        self,
+    ):
         response = self.client.post(
             reverse("rest_register"),
             {
@@ -94,6 +99,7 @@ class DemoLoginApiTests(APITestCase):
     """
     デモログインAPIのテスト
     """
+
     def test_デモログインユーザーが作成されてJWTトークンが返却されること(self):
         response = self.client.post(reverse("auth_demo_login"), format="json")
 
@@ -116,11 +122,16 @@ class DemoLoginDisabledApiTests(APITestCase):
     """
     デモログイン機能を停止にした場合のAPIテスト
     """
-    def test_環境変数でデモログインを停止している場合にデモログインが行われないこと(self):
+
+    def test_環境変数でデモログインを停止している場合にデモログインが行われないこと(
+        self,
+    ):
         response = self.client.post(reverse("auth_demo_login"), format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(response.data, {"detail": "デモログインは現在停止しています。"})
+        self.assertEqual(
+            response.data, {"detail": "デモログインは現在停止しています。"}
+        )
         self.assertFalse(User.objects.filter(is_demo=True).exists())
 
 
@@ -128,6 +139,7 @@ class CurrentUserApiTests(DjRestAuthTestMixin, APITestCase):
     """
     現在のログインユーザー取得APIのテスト
     """
+
     def test_認証済みユーザーが現在のユーザー情報を取得できること(self):
         user = self.create_verified_user(email="current@example.com")
         self.client.force_authenticate(user=user)
@@ -147,6 +159,7 @@ class DjRestAuthLoginApiTests(DjRestAuthTestMixin, APITestCase):
     """
     ログインAPIのテスト
     """
+
     def test_メール認証済みユーザーがログインするとJWTトークンが返却されること(self):
         self.create_verified_user()
 
@@ -179,6 +192,7 @@ class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
     """
     パスワードリセットAPIのテスト
     """
+
     def setUp(self):
         self.user = self.create_verified_user(
             email="reset-user@example.com",
@@ -239,6 +253,7 @@ class PasswordChangeApiTests(DjRestAuthTestMixin, APITestCase):
     """
     パスワード変更APIのテスト
     """
+
     def setUp(self):
         self.user = self.create_verified_user(
             email="change-password@example.com",
@@ -314,6 +329,7 @@ class DeleteAccountApiTests(DjRestAuthTestMixin, APITestCase):
     """
     アカウント削除APIのテスト
     """
+
     def setUp(self):
         self.user = self.create_verified_user(
             email="delete-account@example.com",
@@ -340,6 +356,7 @@ class EmailChangeApiTests(DjRestAuthTestMixin, APITestCase):
     """
     メールアドレス変更APIのテスト
     """
+
     def setUp(self):
         self.user = self.create_verified_user(
             email="change-from@example.com",
@@ -347,7 +364,9 @@ class EmailChangeApiTests(DjRestAuthTestMixin, APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-    def test_メールアドレス変更を申請すると未認証メールアドレスが作成され確認メールが送信されること(self):
+    def test_メールアドレス変更を申請すると未認証メールアドレスが作成され確認メールが送信されること(
+        self,
+    ):
         response = self.client.post(
             reverse("auth_user_email_change"),
             {"email": "change-create@example.com"},
@@ -410,9 +429,13 @@ class EmailChangeApiTests(DjRestAuthTestMixin, APITestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "change-confirm@example.com")
 
-        new_email = EmailAddress.objects.get(user=self.user, email="change-confirm@example.com")
+        new_email = EmailAddress.objects.get(
+            user=self.user, email="change-confirm@example.com"
+        )
         self.assertTrue(new_email.verified)
         self.assertTrue(new_email.primary)
         self.assertFalse(
-            EmailAddress.objects.filter(user=self.user, email="change-from@example.com").exists()
+            EmailAddress.objects.filter(
+                user=self.user, email="change-from@example.com"
+            ).exists()
         )

@@ -8,6 +8,7 @@ class DeckWriteSerializerTests(SimpleTestCase):
     """
     デッキ作成更新用シリアライザのテスト
     """
+
     def test_バリデーション時にnameの前後空白が除去されること(self):
         serializer = DeckWriteSerializer(
             data={

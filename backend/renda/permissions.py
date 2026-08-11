@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 
 
 class SignupEnabledPermission(BasePermission):
-    message = '新規登録は現在停止しています。'
+    message = "新規登録は現在停止しています。"
 
     def has_permission(self, request, view):
         if not settings.SIGNUP_ENABLED:
@@ -13,7 +13,7 @@ class SignupEnabledPermission(BasePermission):
 
 
 class DemoLoginEnabledPermission(BasePermission):
-    message = 'デモログインは現在停止しています。'
+    message = "デモログインは現在停止しています。"
 
     def has_permission(self, request, view):
         if not settings.DEMO_LOGIN_ENABLED:

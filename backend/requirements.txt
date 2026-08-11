@@ -7,3 +7,4 @@ gunicorn==25.3.0
 dj-rest-auth==7.2.0
 django-allauth==65.16.1
 requests==2.33.1
+ruff==0.16.2
