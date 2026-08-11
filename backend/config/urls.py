@@ -1,3 +1,4 @@
+from dj_rest_auth.jwt_auth import get_refresh_view
 from dj_rest_auth.registration.views import RegisterView, VerifyEmailView
 from dj_rest_auth.views import LoginView, PasswordResetConfirmView, PasswordResetView
 from django.conf import settings
@@ -41,6 +42,12 @@ urlpatterns = [
     ),
     # ログイン
     path("api/auth/login/", LoginView.as_view(), name="rest_login"),
+    # トークンリフレッシュ
+    path(
+        "api/auth/token/refresh/",
+        get_refresh_view().as_view(),
+        name="token_refresh",
+    ),
     # パスワード変更
     path(
         "api/auth/password/change/",
