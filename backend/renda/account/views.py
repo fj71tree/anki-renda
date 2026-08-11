@@ -6,26 +6,20 @@ from dj_rest_auth.jwt_auth import set_jwt_cookies, unset_jwt_cookies
 from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import PasswordChangeView
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .exceptions import DemoCardLimitExceeded, DemoDeckLimitExceeded
-from .models import Card, Deck
-from .permissions import DemoLoginEnabledPermission, IsNotDemoUser
+from renda.permissions import DemoLoginEnabledPermission, IsNotDemoUser
+from renda.throttles import DemoLoginThrottle
+
 from .serializers import (
-    CardReadSerializer,
-    CardWriteSerializer,
     CurrentUserSerializer,
-    DeckReadSerializer,
-    DeckWriteSerializer,
     EmailChangeRequestSerializer,
     EmailTokenObtainPairSerializer,
 )
-from .throttles import DemoLoginThrottle
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
@@ -116,65 +110,3 @@ class DeleteAccountView(APIView):
         unset_jwt_cookies(response)
         request.user.delete()
         return response
-
-
-DEMO_USER_DECK_LIMIT = 5
-
-
-class DeckViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Deck.objects.filter(user=self.request.user).order_by("-created_at")
-
-    def get_serializer_class(self):
-        if self.action in ("list", "retrieve"):
-            return DeckReadSerializer
-        return DeckWriteSerializer
-
-    def perform_create(self, serializer):
-        user = self.request.user
-
-        if user.is_demo and user.decks.count() >= DEMO_USER_DECK_LIMIT:
-            raise DemoDeckLimitExceeded()
-
-        serializer.save(user=self.request.user)
-
-
-CARD_USER_DECK_LIMIT = 30
-
-
-class CardViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        deck_id = self.kwargs["deck_id"]
-
-        return Card.objects.filter(
-            deck_id=deck_id,
-            deck__user=self.request.user,
-        ).order_by("created_at")
-
-    def get_serializer_class(self):
-        if self.action in ("list", "retrieve"):
-            return CardReadSerializer
-        return CardWriteSerializer
-
-    def perform_create(self, serializer):
-        deck = get_object_or_404(
-            Deck,
-            id=self.kwargs["deck_id"],
-            user=self.request.user,
-        )
-
-        user = self.request.user
-        if user.is_demo and deck.cards.count() >= CARD_USER_DECK_LIMIT:
-            raise DemoCardLimitExceeded()
-
-        serializer.save(deck=deck)
-
-    def get_object(self):
-        return get_object_or_404(
-            self.get_queryset(),
-            pk=self.kwargs["pk"],
-        )

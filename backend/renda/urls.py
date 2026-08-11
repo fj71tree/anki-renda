@@ -1,7 +1,8 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import CardViewSet, DeckViewSet
+from renda.card.views import CardViewSet
+from renda.deck.views import DeckViewSet
 
 router = DefaultRouter()
 router.register(r"decks", DeckViewSet, basename="deck")

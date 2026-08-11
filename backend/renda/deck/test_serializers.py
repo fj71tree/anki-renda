@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase
 from rest_framework import serializers
 
-from renda.serializers import DeckWriteSerializer
+from renda.deck.serializers import DeckWriteSerializer
 
 
 class DeckWriteSerializerTests(SimpleTestCase):

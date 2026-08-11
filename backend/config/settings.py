@@ -113,10 +113,10 @@ REST_AUTH = {
     "JWT_AUTH_SECURE": not DEBUG,
     "JWT_AUTH_SAMESITE": "Lax",
     "JWT_AUTH_RETURN_EXPIRATION": True,
-    "REGISTER_SERIALIZER": "renda.serializers.EmailOnlyRegisterSerializer",
+    "REGISTER_SERIALIZER": "renda.account.serializers.EmailOnlyRegisterSerializer",
     "REGISTER_PERMISSION_CLASSES": ("renda.permissions.SignupEnabledPermission",),
-    "PASSWORD_RESET_SERIALIZER": "renda.serializers.FrontendPasswordResetSerializer",
-    "PASSWORD_RESET_CONFIRM_SERIALIZER": "renda.serializers.CustomPasswordResetConfirmSerializer",
+    "PASSWORD_RESET_SERIALIZER": "renda.account.serializers.FrontendPasswordResetSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": "renda.account.serializers.CustomPasswordResetConfirmSerializer",
     "OLD_PASSWORD_FIELD_ENABLED": True,
 }
 
