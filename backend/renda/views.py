@@ -2,6 +2,7 @@ import uuid
 from datetime import timedelta
 
 from allauth.account.models import EmailAddress
+from dj_rest_auth.jwt_auth import set_jwt_cookies, unset_jwt_cookies
 from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import PasswordChangeView
 from django.contrib.auth import get_user_model
@@ -56,13 +57,29 @@ class DemoLoginView(APIView):
         )
 
         access_token, refresh_token = jwt_encode(user)
-        return Response(
+        response = Response(
             {
                 "access": str(access_token),
-                "refresh": str(refresh_token),
             },
             status=status.HTTP_200_OK,
         )
+
+        set_jwt_cookies(
+            response,
+            access_token,
+            refresh_token,
+        )
+
+        return response
+
+
+class LogoutView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        unset_jwt_cookies(response)
+        return response
 
 
 class CurrentUserView(generics.RetrieveAPIView):
@@ -95,8 +112,10 @@ class DeleteAccountView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        unset_jwt_cookies(response)
         request.user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return response
 
 
 DEMO_USER_DECK_LIMIT = 5

@@ -12,6 +12,7 @@ from renda.views import (
     DeleteAccountView,
     DemoLoginView,
     EmailChangeRequestView,
+    LogoutView,
 )
 
 urlpatterns = [
@@ -56,6 +57,8 @@ urlpatterns = [
     ),
     # デモログイン
     path("api/auth/demo-login/", DemoLoginView.as_view(), name="auth_demo_login"),
+    # ログアウト
+    path("api/auth/logout/", LogoutView.as_view(), name="auth_logout"),
     # アカウント設定
     path("api/auth/me/", CurrentUserView.as_view(), name="auth_current_user"),
     path(
