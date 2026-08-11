@@ -3,6 +3,7 @@ from allauth.account.models import EmailAddress
 from allauth.account.utils import user_pk_to_url_str
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import (
+    LoginSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetSerializer,
 )
@@ -58,6 +59,25 @@ class CustomPasswordResetConfirmSerializer(PasswordResetConfirmSerializer):
             )
 
         return result
+
+
+class VerifiedPrimaryLoginSerializer(LoginSerializer):
+    @staticmethod
+    def validate_email_verification_status(user, email=None):
+        if not email:
+            raise serializers.ValidationError(
+                "メールアドレスまたはパスワードが正しくありません。"
+            )
+
+        if not EmailAddress.objects.filter(
+            user=user,
+            email__iexact=email,
+            verified=True,
+            primary=True,
+        ).exists():
+            raise serializers.ValidationError(
+                "メールアドレスまたはパスワードが正しくありません。"
+            )
 
 
 class CurrentUserSerializer(serializers.Serializer):

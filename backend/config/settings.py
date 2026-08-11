@@ -118,6 +118,7 @@ REST_AUTH = {
     "PASSWORD_RESET_SERIALIZER": "renda.account.serializers.FrontendPasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "renda.account.serializers.CustomPasswordResetConfirmSerializer",
     "OLD_PASSWORD_FIELD_ENABLED": True,
+    "LOGIN_SERIALIZER": "renda.account.serializers.VerifiedPrimaryLoginSerializer",
 }
 
 SIMPLE_JWT = {

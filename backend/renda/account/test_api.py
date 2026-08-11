@@ -94,99 +94,6 @@ class RegistrationDisabledApiTests(APITestCase):
         self.assertEqual(len(mail.outbox), 0)
 
 
-@override_settings(DEMO_LOGIN_ENABLED=True)
-class DemoLoginApiTests(APITestCase):
-    """
-    デモログインAPIのテスト
-    """
-
-    def test_デモログインユーザーが作成されてJWTトークンが返却されること(self):
-        response = self.client.post(reverse("auth_demo_login"), format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)
-
-        user = User.objects.get(email__endswith="@example.com", is_demo=True)
-        self.assertIsNotNone(user.demo_expires_at)
-        self.assertFalse(user.is_demo_expired)
-        self.assertFalse(user.has_usable_password())
-
-        email_address = EmailAddress.objects.get(user=user, email=user.email)
-        self.assertTrue(email_address.verified)
-        self.assertTrue(email_address.primary)
-
-
-@override_settings(DEMO_LOGIN_ENABLED=False)
-class DemoLoginDisabledApiTests(APITestCase):
-    """
-    デモログイン機能を停止にした場合のAPIテスト
-    """
-
-    def test_環境変数でデモログインを停止している場合にデモログインが行われないこと(
-        self,
-    ):
-        response = self.client.post(reverse("auth_demo_login"), format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(
-            response.data, {"detail": "デモログインは現在停止しています。"}
-        )
-        self.assertFalse(User.objects.filter(is_demo=True).exists())
-
-
-class CurrentUserApiTests(DjRestAuthTestMixin, APITestCase):
-    """
-    現在のログインユーザー取得APIのテスト
-    """
-
-    def test_認証済みユーザーが現在のユーザー情報を取得できること(self):
-        user = self.create_verified_user(email="current@example.com")
-        self.client.force_authenticate(user=user)
-
-        response = self.client.get(reverse("auth_current_user"))
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"email": "current@example.com"})
-
-    def test_未認証状態では現在のユーザー情報を取得できないこと(self):
-        response = self.client.get(reverse("auth_current_user"))
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-
-class DjRestAuthLoginApiTests(DjRestAuthTestMixin, APITestCase):
-    """
-    ログインAPIのテスト
-    """
-
-    def test_メール認証済みユーザーがログインするとJWTトークンが返却されること(self):
-        self.create_verified_user()
-
-        response = self.client.post(
-            reverse("rest_login"),
-            {"email": "verified@example.com", "password": "Passw0rd!"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
-
-    def test_メール未認証ユーザーはログインできないこと(self):
-        User.objects.create_user(
-            email="unverified@example.com",
-            password="Passw0rd!",
-        )
-
-        response = self.client.post(
-            reverse("rest_login"),
-            {"email": "unverified@example.com", "password": "Passw0rd!"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
 class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
     """
     パスワードリセットAPIのテスト
@@ -246,6 +153,221 @@ class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
         self.assertEqual(new_login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", new_login_response.data)
         self.assertIn("refresh", new_login_response.data)
+
+
+class CurrentUserApiTests(DjRestAuthTestMixin, APITestCase):
+    """
+    現在のログインユーザー取得APIのテスト
+    """
+
+    def test_認証済みユーザーが現在のユーザー情報を取得できること(self):
+        user = self.create_verified_user(email="current@example.com")
+        self.client.force_authenticate(user=user)
+
+        response = self.client.get(reverse("auth_current_user"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"email": "current@example.com"})
+
+    def test_未認証状態では現在のユーザー情報を取得できないこと(self):
+        response = self.client.get(reverse("auth_current_user"))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class DjRestAuthLoginApiTests(DjRestAuthTestMixin, APITestCase):
+    """
+    ログインAPIのテスト
+    """
+
+    def test_メール認証済みユーザーがログインするとJWTトークンが返却されること(self):
+        self.create_verified_user()
+
+        response = self.client.post(
+            reverse("rest_login"),
+            {"email": "verified@example.com", "password": "Passw0rd!"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+    def test_メール未認証ユーザーはログインできないこと(self):
+        User.objects.create_user(
+            email="unverified@example.com",
+            password="Passw0rd!",
+        )
+
+        response = self.client.post(
+            reverse("rest_login"),
+            {"email": "unverified@example.com", "password": "Passw0rd!"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_別の認証済みメールを持つユーザーでも未認証の変更先メールではログインできないこと(
+        self,
+    ):
+        user = self.create_verified_user(
+            email="login-current@example.com",
+            password="Passw0rd!",
+        )
+
+        EmailAddress.objects.create(
+            user=user,
+            email="login-pending@example.com",
+            verified=False,
+            primary=False,
+        )
+
+        response = self.client.post(
+            reverse("rest_login"),
+            {
+                "email": "login-pending@example.com",
+                "password": "Passw0rd!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn(
+            "メールアドレスまたはパスワードが正しくありません。",
+            str(response.data),
+        )
+
+
+@override_settings(DEMO_LOGIN_ENABLED=True)
+class DemoLoginApiTests(APITestCase):
+    """
+    デモログインAPIのテスト
+    """
+
+    def test_デモログインユーザーが作成されてJWTトークンが返却されること(self):
+        response = self.client.post(reverse("auth_demo_login"), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+        user = User.objects.get(email__endswith="@example.com", is_demo=True)
+        self.assertIsNotNone(user.demo_expires_at)
+        self.assertFalse(user.is_demo_expired)
+        self.assertFalse(user.has_usable_password())
+
+        email_address = EmailAddress.objects.get(user=user, email=user.email)
+        self.assertTrue(email_address.verified)
+        self.assertTrue(email_address.primary)
+
+
+@override_settings(DEMO_LOGIN_ENABLED=False)
+class DemoLoginDisabledApiTests(APITestCase):
+    """
+    デモログイン機能を停止にした場合のAPIテスト
+    """
+
+    def test_環境変数でデモログインを停止している場合にデモログインが行われないこと(
+        self,
+    ):
+        response = self.client.post(reverse("auth_demo_login"), format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data, {"detail": "デモログインは現在停止しています。"}
+        )
+        self.assertFalse(User.objects.filter(is_demo=True).exists())
+
+
+class EmailChangeApiTests(DjRestAuthTestMixin, APITestCase):
+    """
+    メールアドレス変更APIのテスト
+    """
+
+    def setUp(self):
+        self.user = self.create_verified_user(
+            email="change-from@example.com",
+            password="Passw0rd!",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_メールアドレス変更を申請すると未認証メールアドレスが作成され確認メールが送信されること(
+        self,
+    ):
+        response = self.client.post(
+            reverse("auth_user_email_change"),
+            {"email": "change-create@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"detail": "Verification e-mail sent."})
+        self.assertTrue(
+            EmailAddress.objects.filter(
+                user=self.user,
+                email="change-create@example.com",
+                verified=False,
+                primary=False,
+            ).exists()
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("flow=email-change", mail.outbox[0].body)
+
+    def test_既に使用中のメールアドレスには変更申請できないこと(self):
+        self.create_verified_user(email="used@example.com")
+
+        response = self.client.post(
+            reverse("auth_user_email_change"),
+            {"email": "used@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+
+    def test_未認証状態ではメールアドレス変更申請できないこと(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(
+            reverse("auth_user_email_change"),
+            {"email": "change-unauth@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_メールアドレス変更確認後にユーザーのメールアドレスが更新されること(self):
+        request_response = self.client.post(
+            reverse("auth_user_email_change"),
+            {"email": "change-confirm@example.com"},
+            format="json",
+        )
+        self.assertEqual(request_response.status_code, status.HTTP_200_OK)
+
+        key = self.extract_confirmation_key(mail.outbox[0].body)
+        confirm_response = self.client.post(
+            reverse("rest_verify_email"),
+            {"key": key},
+            format="json",
+        )
+
+        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "change-confirm@example.com")
+
+        new_email = EmailAddress.objects.get(
+            user=self.user, email="change-confirm@example.com"
+        )
+        self.assertTrue(new_email.verified)
+        self.assertTrue(new_email.primary)
+        self.assertFalse(
+            EmailAddress.objects.filter(
+                user=self.user, email="change-from@example.com"
+            ).exists()
+        )
 
 
 class PasswordChangeApiTests(DjRestAuthTestMixin, APITestCase):
@@ -349,92 +471,3 @@ class DeleteAccountApiTests(DjRestAuthTestMixin, APITestCase):
         response = self.client.delete(reverse("auth_user_delete"))
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-
-class EmailChangeApiTests(DjRestAuthTestMixin, APITestCase):
-    """
-    メールアドレス変更APIのテスト
-    """
-
-    def setUp(self):
-        self.user = self.create_verified_user(
-            email="change-from@example.com",
-            password="Passw0rd!",
-        )
-        self.client.force_authenticate(user=self.user)
-
-    def test_メールアドレス変更を申請すると未認証メールアドレスが作成され確認メールが送信されること(
-        self,
-    ):
-        response = self.client.post(
-            reverse("auth_user_email_change"),
-            {"email": "change-create@example.com"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {"detail": "Verification e-mail sent."})
-        self.assertTrue(
-            EmailAddress.objects.filter(
-                user=self.user,
-                email="change-create@example.com",
-                verified=False,
-                primary=False,
-            ).exists()
-        )
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("flow=email-change", mail.outbox[0].body)
-
-    def test_既に使用中のメールアドレスには変更申請できないこと(self):
-        self.create_verified_user(email="used@example.com")
-
-        response = self.client.post(
-            reverse("auth_user_email_change"),
-            {"email": "used@example.com"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
-
-    def test_未認証状態ではメールアドレス変更申請できないこと(self):
-        self.client.force_authenticate(user=None)
-
-        response = self.client.post(
-            reverse("auth_user_email_change"),
-            {"email": "change-unauth@example.com"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_メールアドレス変更確認後にユーザーのメールアドレスが更新されること(self):
-        request_response = self.client.post(
-            reverse("auth_user_email_change"),
-            {"email": "change-confirm@example.com"},
-            format="json",
-        )
-        self.assertEqual(request_response.status_code, status.HTTP_200_OK)
-
-        key = self.extract_confirmation_key(mail.outbox[0].body)
-        confirm_response = self.client.post(
-            reverse("rest_verify_email"),
-            {"key": key},
-            format="json",
-        )
-
-        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
-
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.email, "change-confirm@example.com")
-
-        new_email = EmailAddress.objects.get(
-            user=self.user, email="change-confirm@example.com"
-        )
-        self.assertTrue(new_email.verified)
-        self.assertTrue(new_email.primary)
-        self.assertFalse(
-            EmailAddress.objects.filter(
-                user=self.user, email="change-from@example.com"
-            ).exists()
-        )
