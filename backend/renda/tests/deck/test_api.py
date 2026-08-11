@@ -6,7 +6,6 @@ from rest_framework.test import APITestCase
 
 from renda.models import Deck
 
-
 User = get_user_model()
 
 
@@ -14,6 +13,7 @@ class DeckApiTests(APITestCase):
     """
     デッキAPIのテスト
     """
+
     def setUp(self):
         self.user = User.objects.create_user(
             email="u1@example.com",
@@ -43,9 +43,7 @@ class DeckApiTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {response.data['access']}"
-        )
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
 
     def test_認証済みユーザーは自分のデッキ一覧のみ取得できること(self):
         self._authenticate()

@@ -1,5 +1,6 @@
 from allauth.account import app_settings
 from allauth.account.adapter import DefaultAccountAdapter
+
 from .auth_urls import get_email_confirmation_frontend_url
 
 

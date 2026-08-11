@@ -1,31 +1,30 @@
-from datetime import timedelta
 import uuid
+from datetime import timedelta
+
 from allauth.account.models import EmailAddress
 from dj_rest_auth.utils import jwt_encode
+from dj_rest_auth.views import PasswordChangeView
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Deck, Card
+from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .permissions import DemoLoginEnabledPermission
-from .throttles import DemoLoginThrottle
-from dj_rest_auth.views import PasswordChangeView
+
+from .exceptions import DemoCardLimitExceeded, DemoDeckLimitExceeded
+from .models import Card, Deck
+from .permissions import DemoLoginEnabledPermission, IsNotDemoUser
 from .serializers import (
-    EmailTokenObtainPairSerializer,
-    CurrentUserSerializer,
-    EmailChangeRequestSerializer,
-    DeckReadSerializer,
-    DeckWriteSerializer,
     CardReadSerializer,
     CardWriteSerializer,
+    CurrentUserSerializer,
+    DeckReadSerializer,
+    DeckWriteSerializer,
+    EmailChangeRequestSerializer,
+    EmailTokenObtainPairSerializer,
 )
-from django.shortcuts import get_object_or_404
-from .exceptions import DemoDeckLimitExceeded, DemoCardLimitExceeded
-from .permissions import IsNotDemoUser
-from rest_framework.settings import api_settings
-from django.core.cache import cache
+from .throttles import DemoLoginThrottle
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
@@ -102,6 +101,7 @@ class DeleteAccountView(APIView):
 
 DEMO_USER_DECK_LIMIT = 5
 
+
 class DeckViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -124,9 +124,10 @@ class DeckViewSet(viewsets.ModelViewSet):
 
 CARD_USER_DECK_LIMIT = 30
 
+
 class CardViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         deck_id = self.kwargs["deck_id"]
 

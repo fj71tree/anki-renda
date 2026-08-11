@@ -8,6 +8,7 @@ class DemoLoginThrottle(ScopedRateThrottle):
     DRF標準の識別子ではポート番号まで含まれてしまうため、
     デモログインのスロットリングでは先頭のIPからポート番号を除去して使用する。
     """
+
     def get_ident(self, request):
         xff = request.META.get("HTTP_X_FORWARDED_FOR")
 
@@ -22,7 +23,7 @@ class DemoLoginThrottle(ScopedRateThrottle):
             client = client.rsplit(":", 1)[0]
 
         return client
-    
+
     def allow_request(self, request, view):
         allowed = super().allow_request(request, view)
 

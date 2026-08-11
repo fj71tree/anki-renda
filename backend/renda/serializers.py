@@ -1,13 +1,16 @@
-from allauth.account.utils import user_pk_to_url_str
-from allauth.account.models import EmailAddress
 from allauth.account.internal.flows.manage_email import email_already_exists
-from dj_rest_auth.serializers import PasswordResetSerializer
-from rest_framework import serializers
+from allauth.account.models import EmailAddress
+from allauth.account.utils import user_pk_to_url_str
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.serializers import (
+    PasswordResetConfirmSerializer,
+    PasswordResetSerializer,
+)
+from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from dj_rest_auth.serializers import PasswordResetConfirmSerializer
+
 from .auth_urls import get_password_reset_frontend_url
-from .models import Deck, Card
+from .models import Card, Deck
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):

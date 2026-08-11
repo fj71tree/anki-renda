@@ -71,7 +71,7 @@ class Card(models.Model):
     is_checked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         q = (self.question or "")[:50].replace("\n", " ")
         return f"{self.deck_id}:{q}"
