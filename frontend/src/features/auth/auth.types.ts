@@ -3,6 +3,10 @@ export interface LoginPayload {
   password: string
 }
 
+export interface LoginResponse {
+  access: string
+}
+
 export interface RegisterPayload {
   email: string
   password1: string
@@ -11,11 +15,6 @@ export interface RegisterPayload {
 
 export interface RegisterResponse {
   detail?: string
-}
-
-export interface LoginResponse {
-  access: string
-  refresh: string
 }
 
 export interface RefreshResponse {

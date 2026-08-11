@@ -18,7 +18,7 @@ const router = useRouter()
 const rendaIconSrc = rendaIconAsset
 
 const onSignOut = async () => {
-  auth.signOut()
+  await auth.logout()
   closeNav()
   await router.push('/signin')
 }

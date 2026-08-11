@@ -8,7 +8,7 @@ const REFRESH_URL = '/api/auth/token/refresh/'
 
 const handleAuthFailure = async () => {
   const auth = useAuthStore()
-  auth.logout()
+  auth.clearAuthState()
 
   // サインイン画面以外にいる場合はサインイン画面にリダイレクト
   if (router.currentRoute.value.name !== 'signin') {
@@ -28,6 +28,7 @@ const request = async <T>(url: string, init: RequestInit, retry = false): Promis
   const response = await fetch(url, {
     ...init,
     headers,
+    credentials: 'include',
   })
 
   // 401 Unauthorized以外のときは通常通りレスポンスを処理
@@ -40,7 +41,7 @@ const request = async <T>(url: string, init: RequestInit, retry = false): Promis
   }
 
   // リフレッシュトークンがない場合やリフレッシュトークンのリクエストがすでにある場合は認証失敗として処理
-  if (url.includes(REFRESH_URL) || retry || !auth.refreshToken) {
+  if (url.includes(REFRESH_URL) || retry) {
     await handleAuthFailure()
     const body = await parseResponseBody(response)
     throw new ApiError(response.status, body)
@@ -49,7 +50,7 @@ const request = async <T>(url: string, init: RequestInit, retry = false): Promis
   // リフレッシュトークンのリクエストがまだない場合はリフレッシュトークンのリクエストを開始
   if (!refreshPromise) {
     refreshPromise = authApi
-      .refresh(auth.refreshToken)
+      .refresh()
       .then(({ access }) => {
         auth.setAccessToken(access)
         return access

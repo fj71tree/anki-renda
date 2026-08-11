@@ -64,8 +64,12 @@ export const confirmPasswordReset = async (
   return postJson<PasswordResetConfirmResponse>('/api/auth/password/reset/confirm/', payload)
 }
 
-export const refresh = async (refreshToken: string): Promise<RefreshResponse> => {
-  return postJson<RefreshResponse>('/api/auth/token/refresh/', { refresh: refreshToken })
+export const refresh = async (): Promise<RefreshResponse> => {
+  return postJson<RefreshResponse>('/api/auth/token/refresh/', {})
+}
+
+export const logout = async (): Promise<void> => {
+  await postJson<void>('/api/auth/logout/', {})
 }
 
 export const getCurrentUser = async (): Promise<CurrentUserResponse> => {

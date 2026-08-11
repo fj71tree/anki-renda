@@ -3,22 +3,24 @@ import { computed, ref } from 'vue'
 import * as authApi from '@/features/auth/auth.api'
 import type { ChangePasswordResponse, CurrentUserResponse } from '@/features/auth/auth.types'
 
+type AuthStatus = 'unchecked' | 'authenticated' | 'unauthenticated'
+
 export const useAuthStore = defineStore('auth', () => {
-  const accessToken = ref(localStorage.getItem('accessToken') ?? '')
-  const refreshToken = ref(localStorage.getItem('refreshToken') ?? '')
+  const accessToken = ref('')
   const error = ref<string | null>(null)
   const currentUser = ref<CurrentUserResponse | null>(null)
+  // タブの認証状態
+  const authStatus = ref<AuthStatus>('unchecked')
+  const isAuthenticated = computed(() => authStatus.value === 'authenticated')
 
-  const isAuthenticated = computed(() => !!accessToken.value)
+  let restoreSessionPromise: Promise<boolean> | null = null
 
   const login = async (email: string, password: string) => {
     error.value = null
+
     try {
-      const { access, refresh } = await authApi.login({ email, password })
-      accessToken.value = access
-      refreshToken.value = refresh
-      localStorage.setItem('accessToken', access)
-      localStorage.setItem('refreshToken', refresh)
+      const { access } = await authApi.login({ email, password })
+      setAccessToken(access)
     } catch (e: unknown) {
       error.value = 'ログインに失敗しました'
       throw e
@@ -27,12 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   const demoLogin = async () => {
     error.value = null
+
     try {
-      const { access, refresh } = await authApi.demoLogin()
-      accessToken.value = access
-      refreshToken.value = refresh
-      localStorage.setItem('accessToken', access)
-      localStorage.setItem('refreshToken', refresh)
+      const { access } = await authApi.demoLogin()
+      setAccessToken(access)
     } catch (e: unknown) {
       error.value = 'デモログインに失敗しました'
       throw e
@@ -132,7 +132,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     try {
       await authApi.deleteAccount()
-      logout()
+      clearAuthState()
     } catch (e: unknown) {
       error.value = 'アカウントの削除に失敗しました'
       throw e
@@ -141,33 +141,72 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setAccessToken = (token: string) => {
     accessToken.value = token
-    localStorage.setItem('accessToken', token)
+    authStatus.value = 'authenticated'
   }
 
-  const logout = () => {
+  const clearAuthState = () => {
     accessToken.value = ''
-    refreshToken.value = ''
     currentUser.value = null
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
     error.value = null
+    authStatus.value = 'unauthenticated'
   }
 
-  const signOut = () => {
-    logout()
+  // このタブの認証状態を判定する
+  // access tokenがなければrefresh tokenで認証状態の復元を試みる
+  const restoreSession = async (): Promise<boolean> => {
+    // access tokenを保持している場合は、認証済みとして扱う
+    if (accessToken.value) {
+      return true
+    }
+
+    // 未認証が確定している場合は、早期リターン
+    if (authStatus.value === 'unauthenticated') {
+      return false
+    }
+
+    // refreshで認証状態の復元を試みる
+    if (!restoreSessionPromise) {
+      restoreSessionPromise = authApi
+        .refresh()
+        .then(({ access }) => {
+          setAccessToken(access)
+          return true
+        })
+        .catch(() => {
+          clearAuthState()
+          return false
+        })
+        .finally(() => {
+          restoreSessionPromise = null
+        })
+    }
+
+    return restoreSessionPromise
+  }
+
+  const logout = async () => {
+    clearAuthState()
+
+    try {
+      await authApi.logout()
+    } catch {
+      // ローカル状態は消しているので、ここでは握りつぶす
+    }
   }
 
   return {
     accessToken,
-    refreshToken,
     error,
     currentUser,
     isAuthenticated,
+    authStatus,
     fetchCurrentUser,
     requestEmailChange,
     requestPasswordChange,
     deleteAccount,
     setAccessToken,
+    clearAuthState,
+    restoreSession,
     login,
     demoLogin,
     register,
@@ -175,6 +214,5 @@ export const useAuthStore = defineStore('auth', () => {
     requestPasswordReset,
     confirmPasswordReset,
     logout,
-    signOut,
   }
 })
