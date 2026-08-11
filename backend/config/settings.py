@@ -104,7 +104,14 @@ REST_AUTH = {
     "USE_JWT": True,
     "TOKEN_MODEL": None,
     "SESSION_LOGIN": False,
-    "JWT_AUTH_HTTPONLY": False,
+    # access tokenはCookieに保存しない
+    "JWT_AUTH_COOKIE": None,
+    # refresh tokenはCookieに保存する
+    "JWT_AUTH_REFRESH_COOKIE": "refresh",
+    "JWT_AUTH_REFRESH_COOKIE_PATH": "/api/auth/token/refresh/",
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SECURE": not DEBUG,
+    "JWT_AUTH_SAMESITE": "Lax",
     "JWT_AUTH_RETURN_EXPIRATION": True,
     "REGISTER_SERIALIZER": "renda.serializers.EmailOnlyRegisterSerializer",
     "REGISTER_PERMISSION_CLASSES": ("renda.permissions.SignupEnabledPermission",),

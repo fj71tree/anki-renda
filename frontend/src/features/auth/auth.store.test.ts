@@ -5,36 +5,29 @@ import * as authApi from '@/features/auth/auth.api'
 
 vi.mock('@/features/auth/auth.api', () => ({
   login: vi.fn(),
+  demoLogin: vi.fn(),
   register: vi.fn(),
   verifyEmail: vi.fn(),
   requestPasswordReset: vi.fn(),
   confirmPasswordReset: vi.fn(),
   refresh: vi.fn(),
+  logout: vi.fn(),
+  getCurrentUser: vi.fn(),
+  requestEmailChange: vi.fn(),
+  requestPasswordChange: vi.fn(),
+  deleteAccount: vi.fn(),
 }))
 
 describe('useAuthStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    localStorage.clear()
     vi.clearAllMocks()
-  })
-
-  it('初期化時: localStorageのトークンを読み込む', () => {
-    localStorage.setItem('accessToken', 'stored-access')
-    localStorage.setItem('refreshToken', 'stored-refresh')
-
-    const store = useAuthStore()
-
-    expect(store.accessToken).toBe('stored-access')
-    expect(store.refreshToken).toBe('stored-refresh')
-    expect(store.isAuthenticated).toBe(true)
   })
 
   it('初期化時: トークンがなければ未認証になる', () => {
     const store = useAuthStore()
 
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
     expect(store.isAuthenticated).toBe(false)
   })
 
@@ -42,7 +35,6 @@ describe('useAuthStore', () => {
     const store = useAuthStore()
     vi.mocked(authApi.login).mockResolvedValue({
       access: 'new-access',
-      refresh: 'new-refresh',
     })
 
     await store.login('user@example.com', 'password123')
@@ -52,10 +44,8 @@ describe('useAuthStore', () => {
       password: 'password123',
     })
     expect(store.accessToken).toBe('new-access')
-    expect(store.refreshToken).toBe('new-refresh')
-    expect(localStorage.getItem('accessToken')).toBe('new-access')
-    expect(localStorage.getItem('refreshToken')).toBe('new-refresh')
     expect(store.error).toBe(null)
+    expect(store.authStatus).toBe('authenticated')
     expect(store.isAuthenticated).toBe(true)
   })
 
@@ -68,9 +58,35 @@ describe('useAuthStore', () => {
 
     expect(store.error).toBe('ログインに失敗しました')
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
-    expect(localStorage.getItem('accessToken')).toBeNull()
-    expect(localStorage.getItem('refreshToken')).toBeNull()
+    expect(store.authStatus).toBe('unchecked')
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('demoLogin: 成功時にトークンを保存して認証済みにする', async () => {
+    const store = useAuthStore()
+    vi.mocked(authApi.demoLogin).mockResolvedValue({
+      access: 'demo-access',
+    })
+
+    await store.demoLogin()
+
+    expect(authApi.demoLogin).toHaveBeenCalledOnce()
+    expect(store.accessToken).toBe('demo-access')
+    expect(store.error).toBe(null)
+    expect(store.authStatus).toBe('authenticated')
+    expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('demoLogin: 失敗時にerrorを設定し例外を再スローする', async () => {
+    const store = useAuthStore()
+    const demoLoginError = new Error('demo login failed')
+    vi.mocked(authApi.demoLogin).mockRejectedValue(demoLoginError)
+
+    await expect(store.demoLogin()).rejects.toThrow('demo login failed')
+
+    expect(store.error).toBe('デモログインに失敗しました')
+    expect(store.accessToken).toBe('')
+    expect(store.authStatus).toBe('unchecked')
     expect(store.isAuthenticated).toBe(false)
   })
 
@@ -86,9 +102,6 @@ describe('useAuthStore', () => {
       password2: 'password123',
     })
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
-    expect(localStorage.getItem('accessToken')).toBeNull()
-    expect(localStorage.getItem('refreshToken')).toBeNull()
     expect(store.error).toBe(null)
     expect(store.isAuthenticated).toBe(false)
   })
@@ -114,7 +127,6 @@ describe('useAuthStore', () => {
 
     expect(authApi.verifyEmail).toHaveBeenCalledWith({ key: 'verification-key' })
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
     expect(store.error).toBe(null)
     expect(store.isAuthenticated).toBe(false)
   })
@@ -192,43 +204,232 @@ describe('useAuthStore', () => {
     expect(store.isAuthenticated).toBe(false)
   })
 
-  it('setAccessToken: accessTokenとlocalStorageを更新する', () => {
+  it('fetchCurrentUser: 成功時にcurrentUserを保存して返す', async () => {
+    const store = useAuthStore()
+    const currentUser = { email: 'user@example.com' }
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue(currentUser)
+
+    await expect(store.fetchCurrentUser()).resolves.toEqual(currentUser)
+
+    expect(authApi.getCurrentUser).toHaveBeenCalledOnce()
+    expect(store.currentUser).toEqual(currentUser)
+    expect(store.error).toBe(null)
+  })
+
+  it('fetchCurrentUser: 失敗時にerrorを設定し例外を再スローする', async () => {
+    const store = useAuthStore()
+    const currentUserError = new Error('fetch current user failed')
+    vi.mocked(authApi.getCurrentUser).mockRejectedValue(currentUserError)
+
+    await expect(store.fetchCurrentUser()).rejects.toThrow('fetch current user failed')
+
+    expect(store.currentUser).toBe(null)
+    expect(store.error).toBe('アカウント情報の取得に失敗しました')
+  })
+
+  it('requestEmailChange: 成功時にAPIを呼びerrorをクリアする', async () => {
+    const store = useAuthStore()
+    vi.mocked(authApi.requestEmailChange).mockResolvedValue({ detail: 'ok' })
+
+    await store.requestEmailChange('changed@example.com')
+
+    expect(authApi.requestEmailChange).toHaveBeenCalledWith({ email: 'changed@example.com' })
+    expect(store.error).toBe(null)
+  })
+
+  it('requestEmailChange: 失敗時にerrorを設定し例外を再スローする', async () => {
+    const store = useAuthStore()
+    const emailChangeError = new Error('email change failed')
+    vi.mocked(authApi.requestEmailChange).mockRejectedValue(emailChangeError)
+
+    await expect(store.requestEmailChange('changed@example.com')).rejects.toThrow(
+      'email change failed',
+    )
+
+    expect(store.error).toBe('メールアドレス変更メールの送信に失敗しました')
+  })
+
+  it('requestPasswordChange: 成功時にAPIレスポンスを返しerrorをクリアする', async () => {
+    const store = useAuthStore()
+    const response = { detail: 'password changed' }
+    vi.mocked(authApi.requestPasswordChange).mockResolvedValue(response)
+
+    await expect(
+      store.requestPasswordChange('OldPassword123!', 'NewPassword123!', 'NewPassword123!'),
+    ).resolves.toEqual(response)
+
+    expect(authApi.requestPasswordChange).toHaveBeenCalledWith({
+      old_password: 'OldPassword123!',
+      new_password1: 'NewPassword123!',
+      new_password2: 'NewPassword123!',
+    })
+    expect(store.error).toBe(null)
+  })
+
+  it('requestPasswordChange: 失敗時にerrorを設定し例外を再スローする', async () => {
+    const store = useAuthStore()
+    const passwordChangeError = new Error('password change failed')
+    vi.mocked(authApi.requestPasswordChange).mockRejectedValue(passwordChangeError)
+
+    await expect(
+      store.requestPasswordChange('OldPassword123!', 'NewPassword123!', 'NewPassword123!'),
+    ).rejects.toThrow('password change failed')
+
+    expect(store.error).toBe('パスワードの変更に失敗しました')
+  })
+
+  it('setAccessToken: accessTokenのみを更新する', () => {
     const store = useAuthStore()
 
     store.setAccessToken('updated-access')
 
     expect(store.accessToken).toBe('updated-access')
-    expect(localStorage.getItem('accessToken')).toBe('updated-access')
+    expect(store.authStatus).toBe('authenticated')
     expect(store.isAuthenticated).toBe(true)
   })
 
-  it('logout: トークンとlocalStorageをクリアしerrorも空にする', () => {
-    localStorage.setItem('accessToken', 'stored-access')
-    localStorage.setItem('refreshToken', 'stored-refresh')
+  it('clearAuthState: 認証状態、currentUser、errorをクリアする', () => {
     const store = useAuthStore()
+    store.setAccessToken('access-token')
+    store.currentUser = { email: 'user@example.com' }
     store.error = 'something wrong'
 
-    store.logout()
+    store.clearAuthState()
 
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
-    expect(localStorage.getItem('accessToken')).toBeNull()
-    expect(localStorage.getItem('refreshToken')).toBeNull()
+    expect(store.currentUser).toBe(null)
     expect(store.error).toBe(null)
+    expect(store.authStatus).toBe('unauthenticated')
     expect(store.isAuthenticated).toBe(false)
   })
 
-  it('signOut: logoutと同じく認証情報をクリアする', () => {
-    localStorage.setItem('accessToken', 'stored-access')
-    localStorage.setItem('refreshToken', 'stored-refresh')
+  it('restoreSession: accessTokenがある場合は認証済みとして扱う', async () => {
+    const store = useAuthStore()
+    store.setAccessToken('stored-access')
+
+    await expect(store.restoreSession()).resolves.toBe(true)
+
+    expect(authApi.refresh).not.toHaveBeenCalled()
+    expect(store.authStatus).toBe('authenticated')
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.accessToken).toBe('stored-access')
+  })
+
+  it('restoreSession: 未確認かつaccessTokenがない場合はrefreshで認証状態を復元する', async () => {
     const store = useAuthStore()
 
-    store.signOut()
+    vi.mocked(authApi.refresh).mockResolvedValue({
+      access: 'restored-access',
+    })
+
+    await expect(store.restoreSession()).resolves.toBe(true)
+
+    expect(authApi.refresh).toHaveBeenCalledOnce()
+    expect(store.authStatus).toBe('authenticated')
+    expect(store.isAuthenticated).toBe(true)
+    expect(store.accessToken).toBe('restored-access')
+    expect(localStorage.getItem('accessToken')).toBeNull()
+  })
+
+  it('restoreSession: refresh失敗時は未認証状態にする', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(authApi.refresh).mockRejectedValue(new Error('refresh failed'))
+
+    await expect(store.restoreSession()).resolves.toBe(false)
+
+    expect(authApi.refresh).toHaveBeenCalledOnce()
+    expect(store.authStatus).toBe('unauthenticated')
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.accessToken).toBe('')
+  })
+
+  it('restoreSession: 未認証状態が確認済みならrefreshを再実行しない', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(authApi.refresh).mockRejectedValue(new Error('refresh failed'))
+
+    await store.restoreSession()
+    await expect(store.restoreSession()).resolves.toBe(false)
+
+    expect(authApi.refresh).toHaveBeenCalledOnce()
+    expect(store.authStatus).toBe('unauthenticated')
+  })
+
+  it('restoreSession: 同時に呼ばれてもrefreshは1回だけ実行する', async () => {
+    const store = useAuthStore()
+
+    vi.mocked(authApi.refresh).mockResolvedValue({
+      access: 'restored-access',
+    })
+
+    const [result1, result2] = await Promise.all([store.restoreSession(), store.restoreSession()])
+
+    expect(result1).toBe(true)
+    expect(result2).toBe(true)
+    expect(authApi.refresh).toHaveBeenCalledOnce()
+    expect(store.authStatus).toBe('authenticated')
+  })
+
+  it('deleteAccount: 成功時にアカウント削除後logoutして認証状態をクリアする', async () => {
+    const store = useAuthStore()
+    store.setAccessToken('access-token')
+    store.currentUser = { email: 'user@example.com' }
+    vi.mocked(authApi.deleteAccount).mockResolvedValue()
+    vi.mocked(authApi.logout).mockResolvedValue()
+
+    await store.deleteAccount()
+
+    expect(authApi.deleteAccount).toHaveBeenCalledOnce()
+    expect(store.accessToken).toBe('')
+    expect(store.currentUser).toBe(null)
+    expect(store.error).toBe(null)
+    expect(store.authStatus).toBe('unauthenticated')
+    expect(store.isAuthenticated).toBe(false)
+  })
+
+  it('deleteAccount: 失敗時にerrorを設定し認証状態は維持する', async () => {
+    const store = useAuthStore()
+    const deleteAccountError = new Error('delete account failed')
+    store.setAccessToken('access-token')
+    vi.mocked(authApi.deleteAccount).mockRejectedValue(deleteAccountError)
+
+    await expect(store.deleteAccount()).rejects.toThrow('delete account failed')
+
+    expect(authApi.logout).not.toHaveBeenCalled()
+    expect(store.error).toBe('アカウントの削除に失敗しました')
+    expect(store.accessToken).toBe('access-token')
+    expect(store.authStatus).toBe('authenticated')
+    expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('logout: ローカルの認証状態をクリアしAPI logoutを呼ぶ', async () => {
+    const store = useAuthStore()
+    store.setAccessToken('access-token')
+    store.currentUser = { email: 'user@example.com' }
+    store.error = 'something wrong'
+    vi.mocked(authApi.logout).mockResolvedValue()
+
+    await store.logout()
+
+    expect(authApi.logout).toHaveBeenCalledOnce()
+    expect(store.accessToken).toBe('')
+    expect(store.currentUser).toBe(null)
+    expect(store.error).toBe(null)
+    expect(store.isAuthenticated).toBe(false)
+    expect(store.authStatus).toBe('unauthenticated')
+  })
+
+  it('logout: API logoutが失敗してもローカルの認証状態はクリアしたままにする', async () => {
+    const store = useAuthStore()
+    store.setAccessToken('access-token')
+    vi.mocked(authApi.logout).mockRejectedValue(new Error('logout failed'))
+
+    await expect(store.logout()).resolves.toBeUndefined()
 
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
-    expect(localStorage.getItem('accessToken')).toBeNull()
-    expect(localStorage.getItem('refreshToken')).toBeNull()
+    expect(store.error).toBe(null)
+    expect(store.authStatus).toBe('unauthenticated')
     expect(store.isAuthenticated).toBe(false)
   })
 })

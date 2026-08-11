@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/features/auth/auth.store'
 import HomePage from '@/pages/HomePage.vue'
 import SignInPage from '@/pages/SignInPage.vue'
 import DeckListPage from '@/pages/DeckListPage.vue'
@@ -62,20 +63,21 @@ const router = createRouter({
   ],
 })
 
-function isLoggedIn() {
-  const token = localStorage.getItem('accessToken')
-  return !!token
-}
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
 
-router.beforeEach((to) => {
-  const loggedIn = isLoggedIn()
-
-  if (to.meta.requiresAuth && !loggedIn) {
-    return { name: 'signin', query: { redirect: to.fullPath } }
+  if (to.meta.requiresAuth) {
+    const loggedIn = await auth.restoreSession()
+    if (!loggedIn) {
+      return { name: 'signin', query: { redirect: to.fullPath } }
+    }
   }
 
-  if (to.meta.guestOnly && loggedIn) {
-    return { name: 'decks' }
+  if (to.meta.guestOnly) {
+    const loggedIn = await auth.restoreSession()
+    if (loggedIn) {
+      return { name: 'decks' }
+    }
   }
 })
 

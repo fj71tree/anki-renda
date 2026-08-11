@@ -105,7 +105,6 @@ class DemoLoginApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
 
         user = User.objects.get(email__endswith="@example.com", is_demo=True)
         self.assertIsNotNone(user.demo_expires_at)

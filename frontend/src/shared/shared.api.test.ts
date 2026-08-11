@@ -43,7 +43,6 @@ describe('shared api token refresh flow', () => {
 
   it('401後にrefresh成功で新アクセストークンで再試行する', async () => {
     const store = useAuthStore()
-    store.refreshToken = 'refresh-token'
     store.setAccessToken('expired-access')
     //refresh APIの戻り値をモックする
     vi.mocked(authApi.refresh).mockResolvedValue({ access: 'new-access' })
@@ -63,15 +62,13 @@ describe('shared api token refresh flow', () => {
     const result = await api.get<Array<{ id: number; name: string }>>('/api/decks/')
 
     expect(result).toEqual([{ id: 1, name: 'Deck A' }])
-    expect(authApi.refresh).toHaveBeenCalledWith('refresh-token')
+    expect(authApi.refresh).toHaveBeenCalledWith()
     expect(store.accessToken).toBe('new-access')
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(replaceMock).not.toHaveBeenCalled()
   })
 
   it('refresh失敗時はlogoutしてsigninへ遷移する', async () => {
-    localStorage.setItem('refreshToken', 'refresh-token')
-
     const store = useAuthStore()
     store.setAccessToken('expired-access')
     vi.mocked(authApi.refresh).mockRejectedValue(new Error('refresh failed'))
@@ -82,9 +79,6 @@ describe('shared api token refresh flow', () => {
     await expect(api.get('/api/decks/')).rejects.toThrow('refresh failed')
 
     expect(store.accessToken).toBe('')
-    expect(store.refreshToken).toBe('')
-    expect(localStorage.getItem('accessToken')).toBeNull()
-    expect(localStorage.getItem('refreshToken')).toBeNull()
     expect(replaceMock).toHaveBeenCalledWith({ name: 'signin' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
