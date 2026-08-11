@@ -9,8 +9,7 @@ from dj_rest_auth.serializers import (
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .auth_urls import get_password_reset_frontend_url
-from .models import Card, Deck
+from renda.auth_urls import get_password_reset_frontend_url
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -89,52 +88,3 @@ class EmailChangeRequestSerializer(serializers.Serializer):
             request.user,
             self.validated_data["email"],
         )
-
-
-class DeckWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Deck
-        fields = ["id", "name", "memo"]
-
-    def validate_name(self, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("name is required.")
-        if len(value) > 255:
-            raise serializers.ValidationError("name must be <= 255 chars.")
-        return value
-
-
-class DeckReadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Deck
-        fields = ["id", "name", "memo"]
-
-
-class CardWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Card
-        fields = ["id", "question", "answer"]
-
-    def validate_question(self, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("question is required.")
-        return value
-
-    def validate_answer(self, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("answer is required.")
-        return value
-
-
-class CardReadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Card
-        fields = [
-            "id",
-            "question",
-            "answer",
-            "is_checked",
-        ]
