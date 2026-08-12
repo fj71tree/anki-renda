@@ -43,7 +43,8 @@ class FrontendPasswordResetSerializer(PasswordResetSerializer):
         self.reset_form.users = [
             user
             for user in self.reset_form.users
-            if EmailAddress.objects.filter(
+            if not user.is_demo
+            and EmailAddress.objects.filter(
                 user=user,
                 email__iexact=value,
                 verified=True,
