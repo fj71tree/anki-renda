@@ -23,14 +23,3 @@ class DemoLoginThrottle(ScopedRateThrottle):
             client = client.rsplit(":", 1)[0]
 
         return client
-
-    def allow_request(self, request, view):
-        allowed = super().allow_request(request, view)
-
-        print("scope:", getattr(self, "scope", None))
-        print("rate:", getattr(self, "rate", None))
-        print("ident:", self.get_ident(request))
-        print("key:", self.get_cache_key(request, view))
-        print("allowed:", allowed)
-
-        return allowed
