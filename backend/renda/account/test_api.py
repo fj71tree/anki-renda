@@ -478,7 +478,7 @@ class DeleteAccountApiTests(DjRestAuthTestMixin, APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_認証済みユーザーが自身のアカウントを削除できること(self):
-        response = self.client.delete(reverse("auth_user_delete"))
+        response = self.client.delete(reverse("auth_current_user"))
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(pk=self.user.pk).exists())
@@ -487,6 +487,6 @@ class DeleteAccountApiTests(DjRestAuthTestMixin, APITestCase):
     def test_未認証状態ではアカウント削除できないこと(self):
         self.client.force_authenticate(user=None)
 
-        response = self.client.delete(reverse("auth_user_delete"))
+        response = self.client.delete(reverse("auth_current_user"))
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
