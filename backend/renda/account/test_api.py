@@ -154,6 +154,25 @@ class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
         self.assertIn("access", new_login_response.data)
         self.assertIn("refresh", new_login_response.data)
 
+    def test_未認証かつ非primaryのメールアドレスにはパスワードリセットメールが送信されないこと(
+        self,
+    ):
+        EmailAddress.objects.create(
+            user=self.user,
+            email="reset-pending@example.com",
+            verified=False,
+            primary=False,
+        )
+
+        response = self.client.post(
+            reverse("rest_password_reset"),
+            {"email": "reset-pending@example.com"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(mail.outbox), 0)
+
 
 class CurrentUserApiTests(DjRestAuthTestMixin, APITestCase):
     """

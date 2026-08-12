@@ -35,6 +35,24 @@ def frontend_password_reset_url_generator(request, user, temp_key):
 
 
 class FrontendPasswordResetSerializer(PasswordResetSerializer):
+    # 未確認・非プライマリのメールアドレスからパスワードをリセットできないよう、
+    # 確認済みかつプライマリのメールアドレスに紐づくユーザーのみに対象を限定する
+    def validate_email(self, value):
+        value = super().validate_email(value)
+
+        self.reset_form.users = [
+            user
+            for user in self.reset_form.users
+            if EmailAddress.objects.filter(
+                user=user,
+                email__iexact=value,
+                verified=True,
+                primary=True,
+            ).exists()
+        ]
+
+        return value
+
     # パスワードリセットリンクでフロントエンドを用いるようにカスタマイズ
     def get_email_options(self):
         options = super().get_email_options()
