@@ -83,6 +83,14 @@ class CurrentUserView(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+    def delete(self, request, *args, **kwargs):
+        request.user.delete()
+
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        unset_jwt_cookies(response)
+
+        return response
+
 
 class EmailChangeRequestView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated, IsNotDemoUser]
@@ -100,13 +108,3 @@ class EmailChangeRequestView(generics.GenericAPIView):
 
 class CustomPasswordChangeView(PasswordChangeView):
     permission_classes = [permissions.IsAuthenticated, IsNotDemoUser]
-
-
-class DeleteAccountView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def delete(self, request, *args, **kwargs):
-        response = Response(status=status.HTTP_204_NO_CONTENT)
-        unset_jwt_cookies(response)
-        request.user.delete()
-        return response

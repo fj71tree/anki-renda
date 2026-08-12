@@ -89,5 +89,5 @@ export const requestPasswordChange = async (
 }
 
 export const deleteAccount = async (): Promise<void> => {
-  return api.delete('/api/auth/me/delete/')
+  return api.delete('/api/auth/me/')
 }

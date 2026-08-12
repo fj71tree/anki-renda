@@ -9,7 +9,6 @@ from django.views.generic import TemplateView
 from renda.account.views import (
     CurrentUserView,
     CustomPasswordChangeView,
-    DeleteAccountView,
     DemoLoginView,
     EmailChangeRequestView,
     LogoutView,
@@ -65,7 +64,6 @@ urlpatterns = [
         CustomPasswordChangeView.as_view(),
         name="rest_password_change",
     ),
-    path("api/auth/me/delete/", DeleteAccountView.as_view(), name="auth_user_delete"),
     # renda
     path("api/", include("renda.urls")),
 ]
