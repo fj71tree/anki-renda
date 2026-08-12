@@ -49,12 +49,6 @@ urlpatterns = [
         get_refresh_view().as_view(),
         name="token_refresh",
     ),
-    # パスワード変更
-    path(
-        "api/auth/password/change/",
-        CustomPasswordChangeView.as_view(),
-        name="rest_password_change",
-    ),
     # デモログイン
     path("api/auth/demo-login/", DemoLoginView.as_view(), name="auth_demo_login"),
     # ログアウト
@@ -65,6 +59,11 @@ urlpatterns = [
         "api/auth/me/email/",
         EmailChangeRequestView.as_view(),
         name="auth_user_email_change",
+    ),
+    path(
+        "api/auth/me/password/",
+        CustomPasswordChangeView.as_view(),
+        name="rest_password_change",
     ),
     path("api/auth/me/delete/", DeleteAccountView.as_view(), name="auth_user_delete"),
     # renda

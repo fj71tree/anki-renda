@@ -85,7 +85,7 @@ export const requestEmailChange = async (
 export const requestPasswordChange = async (
   payload: ChangePasswordPayload,
 ): Promise<ChangePasswordResponse> => {
-  return api.post<ChangePasswordResponse>('/api/auth/password/change/', payload)
+  return api.post<ChangePasswordResponse>('/api/auth/me/password/', payload)
 }
 
 export const deleteAccount = async (): Promise<void> => {
