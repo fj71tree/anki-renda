@@ -40,7 +40,10 @@ const addCard = (question: string, answer: string) => {
 }
 
 const updateCard = async (cardId: number, question: string, answer: string) => {
-  const isUpdated = await cardStore.updateCard(deckId.value, cardId, question, answer)
+  const isUpdated = await cardStore.updateCard(deckId.value, cardId, {
+    question,
+    answer,
+  })
   if (!isUpdated) return
 
   closeEditModal()

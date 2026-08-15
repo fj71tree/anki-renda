@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { AdjustmentsHorizontalIcon } from '@heroicons/vue/24/outline'
 import FlashCardSetting from '@/features/study/components/FlashCardSetting.vue'
+import CardCheckBox from '@/features/study/components/CardCheckBox.vue'
 
 defineProps<{
   deckId: string
   displayMode: 'split' | 'center'
   isSettingsOpen: boolean
+  isChecked: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'toggleSettings'): void
   (e: 'settingsClosed'): void
   (e: 'displayModeChanged', mode: 'split' | 'center'): void
+  (e: 'checkedChanged', checked: boolean): void
 }>()
 
 const toggleSettings = () => {
@@ -25,6 +28,10 @@ const closeSettings = () => {
 const handleDisplayModeChange = (mode: 'split' | 'center') => {
   emit('displayModeChanged', mode)
 }
+
+const handleCheckedChange = (checked: boolean) => {
+  emit('checkedChanged', checked)
+}
 </script>
 
 <template>
@@ -37,6 +44,7 @@ const handleDisplayModeChange = (mode: 'split' | 'center') => {
         カード一覧へ
       </router-link>
     </div>
+
     <div class="pointer-events-none absolute inset-x-0 flex items-center justify-center">
       <div class="relative pointer-events-auto">
         <button
@@ -49,27 +57,10 @@ const handleDisplayModeChange = (mode: 'split' | 'center') => {
         </button>
       </div>
     </div>
+
     <div class="ml-auto flex items-center gap-3">
       <div>
-        <label>
-          <input type="checkbox" class="peer hidden" />
-
-          <span
-            class="size-10 rounded-md border-2 border-gray-300 flex items-center justify-center peer-checked:bg-gray-300 peer-checked:[&_svg]:opacity-100"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              class="size-4 text-white opacity-0"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          </span>
-        </label>
+        <CardCheckBox :checked="isChecked" @change="handleCheckedChange" />
       </div>
     </div>
   </div>
