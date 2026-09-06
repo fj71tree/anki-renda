@@ -105,6 +105,16 @@ export const api = {
     })
   },
 
+  patch<T>(url: string, payload?: unknown): Promise<T> {
+    const headers = new Headers()
+    headers.set('Content-Type', 'application/json')
+    return request<T>(url, {
+      method: 'PATCH',
+      body: payload === undefined ? undefined : JSON.stringify(payload),
+      headers,
+    })
+  },
+
   delete(url: string): Promise<void> {
     return request<void>(url, { method: 'DELETE' })
   },

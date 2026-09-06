@@ -10,11 +10,17 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'openEditModal', cardId: number): void
   (e: 'deleteCard', cardId: number): void
+  (e: 'checkedChanged', cardId: number, checked: boolean): void
 }>()
 
 const openEditModal = (cardId: number) => {
   closeMenu()
   emit('openEditModal', cardId)
+}
+
+const handleCheckedChange = (event: Event, cardId: number) => {
+  const input = event.target as HTMLInputElement
+  emit('checkedChanged', cardId, input.checked)
 }
 
 const deleteCard = (cardId: number) => {
@@ -47,6 +53,8 @@ const closeMenu = () => {
       <label class="inline-flex items-centern pl-3">
         <input
           type="checkbox"
+          :checked="card.is_checked"
+          @change="handleCheckedChange($event, card.id)"
           class="h-4 w-4 rounded border-slate-300 text-basic-blue focus:ring-basic-blue"
           :aria-label="`カード${card.id}を選択`"
         />

@@ -46,7 +46,12 @@ describe('useCardStore', () => {
   it('createCard: 成功時にカードを末尾追加し正しいpayloadを送る', async () => {
     const store = useCardStore()
     store.cards = [{ id: 1, question: 'Q1', answer: 'A1', is_checked: false }]
-    vi.mocked(cardApi.create).mockResolvedValue({ id: 2, question: 'Q2', answer: 'A2', is_checked: false })
+    vi.mocked(cardApi.create).mockResolvedValue({
+      id: 2,
+      question: 'Q2',
+      answer: 'A2',
+      is_checked: false,
+    })
 
     await store.createCard(10, 'Q2', 'A2')
 
@@ -81,7 +86,7 @@ describe('useCardStore', () => {
       is_checked: true,
     })
 
-    await store.updateCard(10, 2, 'Q2 updated', 'A2 updated')
+    await store.updateCard(10, 2, { question: 'Q2 updated', answer: 'A2 updated' })
 
     expect(cardApi.update).toHaveBeenCalledWith(10, 2, {
       question: 'Q2 updated',
@@ -104,7 +109,7 @@ describe('useCardStore', () => {
       is_checked: false,
     })
 
-    await store.updateCard(10, 999, 'Ghost Q', 'Ghost A')
+    await store.updateCard(10, 999, { question: 'Ghost Q', answer: 'Ghost A' })
 
     expect(store.cards).toEqual(currentCards)
   })
@@ -115,7 +120,7 @@ describe('useCardStore', () => {
     store.cards = currentCards
     vi.mocked(cardApi.update).mockRejectedValue(new Error('update failed'))
 
-    await store.updateCard(10, 1, 'Q1 updated', 'A1 updated')
+    await store.updateCard(10, 1, { question: 'Ghost Q', answer: 'Ghost A' })
 
     expect(store.cards).toEqual(currentCards)
   })

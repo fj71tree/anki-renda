@@ -18,7 +18,6 @@ card_detail = CardViewSet.as_view(
     {
         "get": "retrieve",
         "patch": "partial_update",
-        "put": "update",
         "delete": "destroy",
     }
 )

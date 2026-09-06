@@ -39,9 +39,3 @@ class CardViewSet(viewsets.ModelViewSet):
             raise DemoCardLimitExceeded()
 
         serializer.save(deck=deck)
-
-    def get_object(self):
-        return get_object_or_404(
-            self.get_queryset(),
-            pk=self.kwargs["pk"],
-        )

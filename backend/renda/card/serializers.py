@@ -6,19 +6,7 @@ from renda.models import Card
 class CardWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Card
-        fields = ["id", "question", "answer"]
-
-    def validate_question(self, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("question is required.")
-        return value
-
-    def validate_answer(self, value: str) -> str:
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("answer is required.")
-        return value
+        fields = ["id", "question", "answer", "is_checked"]
 
 
 class CardReadSerializer(serializers.ModelSerializer):

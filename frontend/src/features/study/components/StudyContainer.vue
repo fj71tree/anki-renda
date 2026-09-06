@@ -14,11 +14,11 @@ const studyStore = useStudyStore()
 const deckId = computed(() => Number(route.params.deckId))
 const deck = computed(() => deckStore.getDeckById(deckId.value))
 
-const count = ref(0)
+const currentCardIndex = ref(0)
 const isSettingsOpen = ref(false)
 const minCount = 0
 const maxCount = computed(() => cardStore.cards.length - 1)
-const card = computed(() => cardStore.cards[count.value])
+const currentCard = computed(() => cardStore.cards[currentCardIndex.value])
 const isAnswerVisible = ref(false)
 const displayMode = ref<'split' | 'center'>('split')
 
@@ -27,7 +27,7 @@ watch(
   async (id) => {
     if (!Number.isFinite(id)) return
 
-    count.value = 0
+    currentCardIndex.value = 0
     isAnswerVisible.value = false
     cardStore.resetCards()
 
@@ -42,11 +42,11 @@ watch(
 
 const moveCard = (direction: 'next' | 'prev') => {
   if (direction === 'next') {
-    if (count.value >= maxCount.value) return
-    count.value++
+    if (currentCardIndex.value >= maxCount.value) return
+    currentCardIndex.value++
   } else {
-    if (count.value <= minCount) return
-    count.value--
+    if (currentCardIndex.value <= minCount) return
+    currentCardIndex.value--
   }
   isAnswerVisible.value = false
 }
@@ -78,6 +78,14 @@ const onClick = (area: 'top' | 'bottom') => {
   }
 }
 
+const onCheckedChange = async (checked: boolean) => {
+  if (!currentCard.value) return
+
+  await cardStore.updateCard(deckId.value, currentCard.value.id, {
+    is_checked: checked,
+  })
+}
+
 const onChangeDisplayMode = (mode: 'split' | 'center') => {
   displayMode.value = mode
 }
@@ -99,12 +107,12 @@ const closeSettings = () => {
     <div class="w-full max-w-none flex flex-col items-center px-0">
       <div class="w-full h-screen flex flex-col bg-transparent overflow-hidden">
         <FlashCard
-          :question="card!.question"
-          :answer="card!.answer"
+          :question="currentCard!.question"
+          :answer="currentCard!.answer"
           :isAnswerVisible="isAnswerVisible"
           :deckName="deck.name"
           :displayMode="displayMode"
-          :isFirstCard="count === 0"
+          :isFirstCard="currentCardIndex === 0"
           :isCenterGuideOpen="displayMode === 'center' && !studyStore.hasShownCenterGuide"
           :isSplitGuideOpen="!studyStore.hasShownSplitGuide"
           @click="onClick"
@@ -114,9 +122,11 @@ const closeSettings = () => {
           :deckId="String(deckId)"
           :displayMode="displayMode"
           :isSettingsOpen="isSettingsOpen"
+          :isChecked="currentCard!.is_checked"
           @toggleSettings="toggleSettings"
           @settings-closed="closeSettings"
           @display-mode-changed="onChangeDisplayMode"
+          @checked-changed="onCheckedChange"
         />
       </div>
     </div>

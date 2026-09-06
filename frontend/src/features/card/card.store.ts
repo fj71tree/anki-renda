@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Card } from './card.types'
+import type { Card, CardUpdatePayload } from './card.types'
 import { cardApi } from './card.api'
 
 export const useCardStore = defineStore('card', () => {
@@ -38,18 +38,14 @@ export const useCardStore = defineStore('card', () => {
   const updateCard = async (
     deckId: number,
     cardId: number,
-    question: string,
-    answer: string,
+    payload: CardUpdatePayload,
   ): Promise<boolean> => {
     error.value = ''
-    const payload = {
-      question: question,
-      answer: answer,
-    }
+
     try {
       const res = await cardApi.update(deckId, cardId, payload)
 
-      // 同じ id の deck を差し替える
+      // 同じ id の card を差し替える
       const index = cards.value.findIndex((card) => card.id === cardId)
       if (index !== -1) {
         cards.value[index] = res

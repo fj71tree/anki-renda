@@ -40,7 +40,10 @@ const addCard = (question: string, answer: string) => {
 }
 
 const updateCard = async (cardId: number, question: string, answer: string) => {
-  const isUpdated = await cardStore.updateCard(deckId.value, cardId, question, answer)
+  const isUpdated = await cardStore.updateCard(deckId.value, cardId, {
+    question,
+    answer,
+  })
   if (!isUpdated) return
 
   closeEditModal()
@@ -48,6 +51,12 @@ const updateCard = async (cardId: number, question: string, answer: string) => {
 
 const deleteCard = (cardId: number) => {
   cardStore.deleteCard(deckId.value, cardId)
+}
+
+const onCheckedChange = async (cardId: number, checked: boolean) => {
+  await cardStore.updateCard(deckId.value, cardId, {
+    is_checked: checked,
+  })
 }
 
 //カード作成モーダルの開閉
@@ -99,6 +108,7 @@ const closeEditModal = () => {
           <CardListRows
             :cardList="cardStore.cards"
             @openEditModal="openEditModal"
+            @checkedChanged="onCheckedChange"
             @deleteCard="deleteCard"
           />
         </template>

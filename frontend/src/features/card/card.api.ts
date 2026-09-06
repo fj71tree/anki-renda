@@ -1,5 +1,5 @@
 import { api } from '@/shared/shared.api'
-import type { Card } from '@/features/card/card.types'
+import type { Card, CardUpdatePayload } from '@/features/card/card.types'
 
 export const cardApi = {
   async list(deckId: number): Promise<Card[]> {
@@ -10,12 +10,8 @@ export const cardApi = {
     return api.post<Card>(`/api/decks/${deckId}/cards/`, payload)
   },
 
-  async update(
-    deckId: number,
-    cardId: number,
-    payload: { question: string; answer: string },
-  ): Promise<Card> {
-    return api.put<Card>(`/api/decks/${deckId}/cards/${cardId}/`, payload)
+  async update(deckId: number, cardId: number, payload: CardUpdatePayload): Promise<Card> {
+    return api.patch<Card>(`/api/decks/${deckId}/cards/${cardId}/`, payload)
   },
 
   async delete(deckId: number, cardId: number): Promise<void> {
