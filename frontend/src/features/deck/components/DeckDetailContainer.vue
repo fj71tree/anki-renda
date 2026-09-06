@@ -53,6 +53,12 @@ const deleteCard = (cardId: number) => {
   cardStore.deleteCard(deckId.value, cardId)
 }
 
+const onCheckedChange = async (cardId: number, checked: boolean) => {
+  await cardStore.updateCard(deckId.value, cardId, {
+    is_checked: checked,
+  })
+}
+
 //カード作成モーダルの開閉
 const isCreateCardModal = ref<boolean>(false)
 const openCreateCardModal = () => {
@@ -102,6 +108,7 @@ const closeEditModal = () => {
           <CardListRows
             :cardList="cardStore.cards"
             @openEditModal="openEditModal"
+            @checkedChanged="onCheckedChange"
             @deleteCard="deleteCard"
           />
         </template>
