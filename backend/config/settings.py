@@ -98,6 +98,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "demo_login": "1/hour",
     },
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 2,
 }
 
 REST_AUTH = {

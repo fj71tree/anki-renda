@@ -5,6 +5,7 @@ import { deckApi } from '@/features/deck/deck.api'
 
 export const useDeckStore = defineStore('deck', () => {
   const decks = ref<Deck[]>([])
+  const deckCount = ref<number>(0)
   const loading = ref(false)
   const error = ref<string>('')
 
@@ -15,7 +16,8 @@ export const useDeckStore = defineStore('deck', () => {
     error.value = ''
     try {
       const res = await deckApi.list()
-      decks.value = res
+      decks.value = res.results
+      deckCount.value = res.count
     } catch {
       error.value = 'デッキの取得に失敗しました'
     } finally {
@@ -81,6 +83,7 @@ export const useDeckStore = defineStore('deck', () => {
 
   return {
     decks,
+    deckCount,
     loading,
     error,
 

@@ -9,6 +9,7 @@ import DeckListHeader from '@/features/deck/components/DeckListHeader.vue'
 import DeckListRows from '@/features/deck/components/DeckListRows.vue'
 import ListPanel from '@/shared/components/ListPanel.vue'
 import DeckDeleteConfirmModal from './DeckDeleteConfirmModal.vue'
+import PaginationControl from './PaginationControl.vue'
 
 const deckStore = useDeckStore()
 
@@ -102,6 +103,7 @@ const confirmDeleteDeck = async () => {
           />
         </template>
       </ListPanel>
+      <PaginationControl :deckCount="deckStore.deckCount" />
     </div>
   </div>
 
