@@ -3,13 +3,63 @@ services:
     image: postgres:17.0
     container_name: renda-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DBを設定してください}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USERを設定してください}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORDを設定してください}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      ACCOUNT_EMAIL_CONFIRMATION_URL: "${ACCOUNT_EMAIL_CONFIRMATION_URL:?ACCOUNT_EMAIL_CONFIRMATION_URLを設定してください}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:?ALLOWED_HOSTSを設定してください}"
+      DEBUG: "${DEBUG:?DEBUGを設定してください}"
+      DEMO_LOGIN_ENABLED: "${DEMO_LOGIN_ENABLED:?DEMO_LOGIN_ENABLEDを設定してください}"
+      PASSWORD_RESET_CONFIRM_URL: "${PASSWORD_RESET_CONFIRM_URL:?PASSWORD_RESET_CONFIRM_URLを設定してください}"
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DBを設定してください}
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORDを設定してください}
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USERを設定してください}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEYを設定してください}
+      SIGNUP_ENABLED: "${SIGNUP_ENABLED:?SIGNUP_ENABLEDを設定してください}"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    command: sh -c "npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8000
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
+  frontend_node_modules:
