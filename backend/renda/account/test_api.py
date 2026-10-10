@@ -41,6 +41,9 @@ class RegistrationApiTests(APITestCase):
     アカウント新規登録APIのテスト
     """
 
+    @override_settings(
+        ACCOUNT_EMAIL_CONFIRMATION_URL="https://frontend.example/verify-email/{key}",
+    )
     def test_ユーザの登録後に確認メールが送信されること(self):
         response = self.client.post(
             reverse("rest_register"),
@@ -63,7 +66,7 @@ class RegistrationApiTests(APITestCase):
                 verified=False,
             ).exists()
         )
-        self.assertIn("http://localhost:5173/verify-email/", mail.outbox[0].body)
+        self.assertIn("https://frontend.example/verify-email/", mail.outbox[0].body)
         self.assertNotIn("flow=email-change", mail.outbox[0].body)
         self.assertNotIn("access", response.data)
         self.assertNotIn("refresh", response.data)
@@ -105,6 +108,11 @@ class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
             password="Passw0rd!",
         )
 
+    @override_settings(
+        PASSWORD_RESET_CONFIRM_URL=(
+            "https://frontend.example/reset-password/{uid}/{token}"
+        ),
+    )
     def test_登録済みユーザーにパスワードリセットメールが送信されること(self):
         response = self.client.post(
             reverse("rest_password_reset"),
@@ -114,7 +122,7 @@ class PasswordResetApiTests(DjRestAuthTestMixin, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("http://localhost:5173/reset-password/", mail.outbox[0].body)
+        self.assertIn("https://frontend.example/reset-password/", mail.outbox[0].body)
 
     def test_パスワード再設定後に新しいパスワードでログインできること(self):
         reset_response = self.client.post(
